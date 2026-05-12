@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 檢查必要檔案存在
+        run: |
+          for f in index.html menu-items.js menu-raw.js; do
+            if [ ! -f "$f" ]; then
+              echo "❌ 缺少必要檔案: $f"
+              exit 1
+            fi
+            echo "✅ $f"
+          done
+
+      - name: 驗證 HTML 結構
+        run: |
+          if ! grep -q '<!DOCTYPE html>' index.html; then
+            echo "❌ index.html 缺少 DOCTYPE 宣告"
+            exit 1
+          fi
+          if ! grep -q 'menu-items.js' index.html; then
+            echo "❌ index.html 未引入 menu-items.js"
+            exit 1
+          fi
+          echo "✅ HTML 結構驗證通過"
+
+      - name: 驗證 JS 模組匯出
+        run: |
+          for export in menuItems categories tagDefs store ui; do
+            if ! grep -q "export const $export" menu-items.js; then
+              echo "❌ menu-items.js 缺少匯出: $export"
+              exit 1
+            fi
+            echo "✅ export $export"
+          done
